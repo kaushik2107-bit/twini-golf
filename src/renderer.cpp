@@ -1,0 +1,373 @@
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_image.h>
+#include <SDL2/SDL_ttf.h>
+#include <glad/glad.h>
+#include <iostream>
+
+#include "renderer.h"
+#include "types.h"
+
+void render_background() {
+    glBindTexture(GL_TEXTURE_2D, bgId);
+    glEnable(GL_TEXTURE_2D); 
+
+    const float h_unit = 2.0f / WIN_WIDTH;
+    const float v_unit = 2.0f / WIN_HEIGHT;
+    const float imageWidth = 640.0 * h_unit;
+    const float imageHeight = 480.0 * v_unit;
+
+    const float fullRatio = WIN_WIDTH / 640.0; 
+
+    float left = -1.0;
+    float right = left + imageWidth * fullRatio;
+    float top = 1.0;
+    float bottom = top - imageHeight * fullRatio;
+
+    glBegin(GL_QUADS);
+        glTexCoord2f(0.0f, 0.0f);
+        glVertex2f(left, bottom);
+        glTexCoord2f(1.0f, 0.0f);
+        glVertex2f(right, bottom);
+        glTexCoord2f(1.0f, 1.0f);
+        glVertex2f(right, top);
+        glTexCoord2f(0.0f, 1.0f);
+        glVertex2f(left, top);
+    glEnd();
+    glDisable(GL_TEXTURE_2D);
+}
+
+void render_hole(float x, float y) {
+    glBindTexture(GL_TEXTURE_2D, holeId);
+    glEnable(GL_TEXTURE_2D); 
+    glEnable(GL_BLEND);
+
+
+    const float h_unit = 2.0f / WIN_WIDTH;
+    const float v_unit = 2.0f / WIN_HEIGHT;
+    const float imageWidth = 16.0 * h_unit;
+    const float imageHeight = 19.0 * v_unit;
+
+    const float pos_x = x * h_unit;
+    const float pos_y = y * v_unit;
+
+    float left = -1.0 + pos_x;
+    float right = left + imageWidth;
+    float top = 1.0 + pos_y;
+    float bottom = top - imageHeight;
+
+    glBegin(GL_QUADS);
+        glTexCoord2f(0.0f, 0.0f);
+        glVertex2f(left, bottom);
+        glTexCoord2f(1.0f, 0.0f);
+        glVertex2f(right, bottom);
+        glTexCoord2f(1.0f, 1.0f);
+        glVertex2f(right, top);
+        glTexCoord2f(0.0f, 1.0f);
+        glVertex2f(left, top);
+    glEnd();
+
+    glDisable(GL_TEXTURE_2D);
+    glDisable(GL_BLEND);
+}
+
+void render_ball(float x, float y, float size) {
+    glBindTexture(GL_TEXTURE_2D, ballId);
+    glEnable(GL_TEXTURE_2D); 
+    glEnable(GL_BLEND);
+
+
+    const float h_unit = 2.0f / WIN_WIDTH;
+    const float v_unit = 2.0f / WIN_HEIGHT;
+    const float imageWidth = size * h_unit;
+    const float imageHeight = size * v_unit;
+
+    const float pos_x = x * h_unit;
+    const float pos_y = y * v_unit;
+
+    float left = -1.0 + pos_x;
+    float right = left + imageWidth;
+    float top = 1.0 + pos_y;
+    float bottom = top - imageHeight;
+
+    glBegin(GL_QUADS);
+        glTexCoord2f(0.0f, 0.0f);
+        glVertex2f(left, bottom);
+        glTexCoord2f(1.0f, 0.0f);
+        glVertex2f(right, bottom);
+        glTexCoord2f(1.0f, 1.0f);
+        glVertex2f(right, top);
+        glTexCoord2f(0.0f, 1.0f);
+        glVertex2f(left, top);
+    glEnd();
+
+    glDisable(GL_TEXTURE_2D);
+    glDisable(GL_BLEND);
+}
+
+void render_pointer(float x, float y, double angle) {
+    glBindTexture(GL_TEXTURE_2D, pointerId);
+    glEnable(GL_TEXTURE_2D); 
+    glEnable(GL_BLEND);
+
+
+    const float h_unit = 2.0f / WIN_WIDTH;
+    const float v_unit = 2.0f / WIN_HEIGHT;
+    const float imageWidth = 16.0 * h_unit;
+    const float imageHeight = 64.0 * v_unit;
+
+    const float pos_x = x * h_unit;
+    const float pos_y = (y + 12) * v_unit;
+
+    float left = -1.0 + pos_x;
+    float right = left + imageWidth;
+    float top = 1.0 + pos_y;
+    float bottom = top - imageHeight;
+
+    float centerX = (left + right) / 2.0f;
+    float centerY = (top + bottom + 0.1) / 2.0f;
+
+    glPushMatrix();
+    glTranslatef(centerX, centerY, 0.0f);
+    glRotatef(angle, 0.0f, 0.0f, 1.0f);
+    glTranslatef(-centerX, -centerY, 0.0f);
+
+    glBegin(GL_QUADS);
+        glTexCoord2f(0.0f, 0.0f);
+        glVertex2f(left, bottom);
+        glTexCoord2f(1.0f, 0.0f);
+        glVertex2f(right, bottom);
+        glTexCoord2f(1.0f, 1.0f);
+        glVertex2f(right, top);
+        glTexCoord2f(0.0f, 1.0f);
+        glVertex2f(left, top);
+    glEnd();
+
+    glPopMatrix();
+
+    glDisable(GL_TEXTURE_2D);
+    glDisable(GL_BLEND);
+}
+
+void render_power_meter_overlay(float x, float y) {
+    glEnable(GL_TEXTURE_2D); 
+    glEnable(GL_BLEND);
+
+
+    const float h_unit = 2.0f / WIN_WIDTH;
+    const float v_unit = 2.0f / WIN_HEIGHT;
+
+    /**
+     * Render Overlay
+    */
+    glBindTexture(GL_TEXTURE_2D, powermeterOId);
+    const float imageWidth = 16 * h_unit;
+    const float imageHeight = 64 * v_unit;
+
+    const float pos_x = x * h_unit;
+    const float pos_y = y * v_unit;
+
+    float left = -1.0 + pos_x;
+    float right = left + imageWidth;
+    float top = 1.0 + pos_y;
+    float bottom = top - imageHeight;
+
+    glBegin(GL_QUADS);
+        glTexCoord2f(0.0f, 0.0f);
+        glVertex2f(left, bottom);
+        glTexCoord2f(1.0f, 0.0f);
+        glVertex2f(right, bottom);
+        glTexCoord2f(1.0f, 1.0f);
+        glVertex2f(right, top);
+        glTexCoord2f(0.0f, 1.0f);
+        glVertex2f(left, top);
+    glEnd();
+
+    glDisable(GL_TEXTURE_2D);
+    glDisable(GL_BLEND);
+}
+
+void render_power_meter_bg(float x, float y) {
+    glEnable(GL_TEXTURE_2D); 
+    glEnable(GL_BLEND);
+
+
+    const float h_unit = 2.0f / WIN_WIDTH;
+    const float v_unit = 2.0f / WIN_HEIGHT;
+
+    /**
+     * Render Overlay
+    */
+    glBindTexture(GL_TEXTURE_2D, powermeterBId);
+    const float imageWidth = 16 * h_unit;
+    const float imageHeight = 64 * v_unit;
+
+    const float pos_x = x * h_unit;
+    const float pos_y = y * v_unit;
+
+    float left = -1.0 + pos_x;
+    float right = left + imageWidth;
+    float top = 1.0 + pos_y;
+    float bottom = top - imageHeight;
+
+    glBegin(GL_QUADS);
+        glTexCoord2f(0.0f, 0.0f);
+        glVertex2f(left, bottom);
+        glTexCoord2f(1.0f, 0.0f);
+        glVertex2f(right, bottom);
+        glTexCoord2f(1.0f, 1.0f);
+        glVertex2f(right, top);
+        glTexCoord2f(0.0f, 1.0f);
+        glVertex2f(left, top);
+    glEnd();
+
+    glDisable(GL_TEXTURE_2D);
+    glDisable(GL_BLEND);
+}
+
+void render_power_meter_fg(float x, float y, Point p1, Point p2) {
+    glEnable(GL_TEXTURE_2D); 
+    glEnable(GL_BLEND);
+
+
+    const float h_unit = 2.0f / WIN_WIDTH;
+    const float v_unit = 2.0f / WIN_HEIGHT;
+
+    const double dist = p1.x == -1 ? 0 : std::max(0.0, std::min(10.0, std::hypot(p2.x - p1.x, p2.y - p1.y) / 30.0)) / 10.0;
+
+    /**
+     * Render Overlay
+    */
+    glBindTexture(GL_TEXTURE_2D, powermeterFId);
+    const float imageWidth = 8 * h_unit;
+    const float imageHeight = 56 * dist * v_unit;
+
+    const float pos_x = (x + 4) * h_unit;
+    const float pos_y = (y - 4 - 56) * v_unit;
+
+    float left = -1.0 + pos_x;
+    float right = left + imageWidth;
+    float top = 1.0 + pos_y;
+    float bottom = top + imageHeight;
+
+    glBegin(GL_QUADS);
+        glTexCoord2f(0.0f, 0.0f);
+        glVertex2f(left, bottom);
+        glTexCoord2f(1.0f, 0.0f);
+        glVertex2f(right, bottom);
+        glTexCoord2f(1.0f, 1.0f);
+        glVertex2f(right, top);
+        glTexCoord2f(0.0f, 1.0f);
+        glVertex2f(left, top);
+    glEnd();
+
+    glDisable(GL_TEXTURE_2D);
+    glDisable(GL_BLEND);
+}
+
+void render_power_meter(float x, float y, Point p1, Point p2) {
+    // render_power_meter_overlay(x, y);
+    render_power_meter_bg(x, y);
+    render_power_meter_fg(x, y, p1, p2);
+}
+
+void render_splash(float width) {
+    glBindTexture(GL_TEXTURE_2D, splashScreenId);
+    glEnable(GL_TEXTURE_2D); 
+    glEnable(GL_BLEND);
+
+
+    const float h_unit = 2.0f / WIN_WIDTH;
+    const float v_unit = 2.0f / WIN_HEIGHT;
+    const float imageWidth = width * h_unit;
+    const float imageHeight = 480.0 * v_unit;
+
+    const float fullRatio = WIN_WIDTH / 640.0; 
+
+    float left = -imageWidth / 2.0;
+    float right = left + imageWidth * fullRatio;
+    float top = 0.5;
+    float bottom = top - imageHeight * fullRatio;
+
+    glBegin(GL_QUADS);
+        glTexCoord2f(0.0f, 0.0f);
+        glVertex2f(left, bottom);
+        glTexCoord2f(1.0f, 0.0f);
+        glVertex2f(right, bottom);
+        glTexCoord2f(1.0f, 1.0f);
+        glVertex2f(right, top);
+        glTexCoord2f(0.0f, 1.0f);
+        glVertex2f(left, top);
+    glEnd();
+
+    glDisable(GL_BLEND);
+    glDisable(GL_TEXTURE_2D);
+}
+
+void render_logo() {
+    glBindTexture(GL_TEXTURE_2D, logoId);
+    glEnable(GL_TEXTURE_2D); 
+    glEnable(GL_BLEND);
+
+
+    const float h_unit = 2.0f / WIN_WIDTH;
+    const float v_unit = 2.0f / WIN_HEIGHT;
+    const float imageWidth = 319.0 * h_unit / 1.2;
+    const float imageHeight = 201.0 * v_unit / 1.2;
+
+    const float fullRatio = WIN_WIDTH / 640.0; 
+
+    float left = 0.0 - imageWidth / 2.0;
+    float right = left + imageWidth * fullRatio;
+    float top = 0.4;
+    float bottom = top - imageHeight * fullRatio;
+
+    glBegin(GL_QUADS);
+        glTexCoord2f(0.0f, 0.0f);
+        glVertex2f(left, top);
+        glTexCoord2f(1.0f, 0.0f);
+        glVertex2f(right, top);
+        glTexCoord2f(1.0f, 1.0f);
+        glVertex2f(right, bottom);
+        glTexCoord2f(0.0f, 1.0f);
+        glVertex2f(left, bottom);
+    glEnd();
+
+    glDisable(GL_BLEND);
+    glDisable(GL_TEXTURE_2D);
+}
+
+void render_text(const std::string& text, SDL_Color text_color) {
+    SDL_Surface* surface = TTF_RenderText_Solid(font, text.c_str(), text_color);
+    if (surface == nullptr) {
+        TTF_CloseFont(font);
+        std::cerr << "Unable to render text on the surface: " << TTF_GetError() << std::endl;
+        return;
+    }
+
+    GLuint textId;
+    glGenTextures(1, &textId);
+    glBindTexture(GL_TEXTURE_2D, textId);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, surface->w, surface->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, surface->pixels);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    SDL_FreeSurface(surface);
+
+    glEnable(GL_TEXTURE_2D);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    glBindTexture(GL_TEXTURE_2D, textId);
+
+    glBegin(GL_QUADS);
+    glTexCoord2f(0.0f, 0.0f); glVertex2f(-1.0f, 1.0f); // Top-left corner
+    glTexCoord2f(1.0f, 0.0f); glVertex2f(0.0f, 1.0f); // Top-right corner
+    glTexCoord2f(1.0f, 1.0f); glVertex2f(0.0f, 0.0f); // Bottom-right corner
+    glTexCoord2f(0.0f, 1.0f); glVertex2f(-1.0f, 0.0f); // Bottom-left corner
+    glEnd();
+
+    glDisable(GL_BLEND);
+    glDisable(GL_TEXTURE_2D);
+
+}
