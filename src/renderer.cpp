@@ -7,6 +7,8 @@
 #include "renderer.h"
 #include "types.h"
 
+#define M_PI 3.14159265358979323846
+
 void render_background() {
     glBindTexture(GL_TEXTURE_2D, bgId);
     glEnable(GL_TEXTURE_2D); 
@@ -303,11 +305,19 @@ void render_splash(float width) {
     glDisable(GL_TEXTURE_2D);
 }
 
+float oscillationSpeed = 0.05f;
+float oscillationAmplitude = 0.1f;
+int angle = 0;
+
 void render_logo() {
+    angle += 1;
+    float disp = oscillationAmplitude * sin(angle * M_PI / 180);
+
+    if (angle == 360) angle = 0;
+
     glBindTexture(GL_TEXTURE_2D, logoId);
     glEnable(GL_TEXTURE_2D); 
     glEnable(GL_BLEND);
-
 
     const float h_unit = 2.0f / WIN_WIDTH;
     const float v_unit = 2.0f / WIN_HEIGHT;
@@ -318,7 +328,7 @@ void render_logo() {
 
     float left = 0.0 - imageWidth / 2.0;
     float right = left + imageWidth * fullRatio;
-    float top = 0.4;
+    float top = 0.4 + disp;
     float bottom = top - imageHeight * fullRatio;
 
     glBegin(GL_QUADS);
@@ -336,38 +346,74 @@ void render_logo() {
     glDisable(GL_TEXTURE_2D);
 }
 
-void render_text(const std::string& text, SDL_Color text_color) {
-    SDL_Surface* surface = TTF_RenderText_Solid(font, text.c_str(), text_color);
-    if (surface == nullptr) {
-        TTF_CloseFont(font);
-        std::cerr << "Unable to render text on the surface: " << TTF_GetError() << std::endl;
-        return;
-    }
+int next_power_of_2(int x) {
+	double logbase2 = log(x) / log(2);
+	return round(pow(2,ceil(logbase2)));
+}
 
-    GLuint textId;
-    glGenTextures(1, &textId);
-    glBindTexture(GL_TEXTURE_2D, textId);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, surface->w, surface->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, surface->pixels);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    SDL_FreeSurface(surface);
+
+void render_text(const std::string& text, SDL_Color color) {
+    SDL_Surface *initial, *intermediary;
+    int w, h;
+    GLuint texture;
+
+    initial = TTF_RenderText_Blended(font, text.c_str(), color);
+
+    w = next_power_of_2(initial->w);
+    h = next_power_of_2(initial->h);
+
+    intermediary = SDL_CreateRGBSurface(0, w, h, 32, 
+        0x00ff0000, 0x0000ff00, 0x000000ff, 0xff000000
+    );
+
+    SDL_BlitSurface(initial, 0, intermediary, 0);
+
+    glGenTextures(1, &texture);
+    glBindTexture(GL_TEXTURE_2D, texture);
+    glTexImage2D(GL_TEXTURE_2D, 0, 4, w, h, 0, GL_BGRA, 
+			GL_UNSIGNED_BYTE, intermediary->pixels );
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);	
 
     glEnable(GL_TEXTURE_2D);
     glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glBindTexture(GL_TEXTURE_2D, texture);
+	glColor3f(1.0f, 1.0f, 1.0f);
 
-    glBindTexture(GL_TEXTURE_2D, textId);
+    const float h_unit = 2.0f / WIN_WIDTH;
+    const float v_unit = 2.0f / WIN_HEIGHT;
+
+    const float imageWidth = w * h_unit;
+    const float imageHeight = h * v_unit;
+
+    const float fullRatio = WIN_WIDTH / 640.0; 
+
+    float left = -imageWidth / 2.0 + 0.03;
+    float right = left + imageWidth * fullRatio;
+    float top = -0.43;
+    float bottom = top - imageHeight * fullRatio;
+
 
     glBegin(GL_QUADS);
-    glTexCoord2f(0.0f, 0.0f); glVertex2f(-1.0f, 1.0f); // Top-left corner
-    glTexCoord2f(1.0f, 0.0f); glVertex2f(0.0f, 1.0f); // Top-right corner
-    glTexCoord2f(1.0f, 1.0f); glVertex2f(0.0f, 0.0f); // Bottom-right corner
-    glTexCoord2f(0.0f, 1.0f); glVertex2f(-1.0f, 0.0f); // Bottom-left corner
-    glEnd();
+		glTexCoord2f(0.0f, 1.0f); 
+			glVertex2f(left, bottom);
+		glTexCoord2f(1.0f, 1.0f); 
+			glVertex2f(right, bottom);
+		glTexCoord2f(1.0f, 0.0f); 
+			glVertex2f(right, top);
+		glTexCoord2f(0.0f, 0.0f); 
+			glVertex2f(left, top);   
+	glEnd();
 
+    glFinish();
     glDisable(GL_BLEND);
     glDisable(GL_TEXTURE_2D);
+
+
+    SDL_FreeSurface(initial);
+	SDL_FreeSurface(intermediary);
+	glDeleteTextures(1, &texture);
+
 
 }

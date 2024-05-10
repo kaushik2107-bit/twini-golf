@@ -112,7 +112,9 @@ int main() {
                         quit = true;
                         break;
                     case SDL_MOUSEBUTTONDOWN:
-                        if (event.button.button == SDL_BUTTON_LEFT) {
+                        if (!started) {
+                            started = true;
+                        } else if (event.button.button == SDL_BUTTON_LEFT) {
                             isDragging = true;
                             end.x = event.button.x;
                             end.y = event.button.y;
@@ -265,8 +267,10 @@ void display(bool isDragging) {
     if (!started) {
         render_logo();
         render_splash(900.0);
+
         SDL_Color text_col{ 255, 255, 255, 255 };
-        render_text("A", text_col);
+        render_text("LEFT CLICK TO START", text_col);
+        
         goto swap_window;
     }
 
@@ -310,6 +314,7 @@ swap_window:
 }
 
 void close() {
+    TTF_CloseFont(font);
     SDL_GL_DeleteContext(context);
     SDL_DestroyWindow(window);
     SDL_Quit();

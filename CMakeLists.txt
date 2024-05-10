@@ -1,13 +1,14 @@
 cmake_minimum_required(VERSION 3.27)
-project(ttt VERSION 0.1 LANGUAGES C CXX)
+project(golf VERSION 0.1 LANGUAGES C CXX)
 
 # ---- Set C++ standard ----
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
+
 # ---- Name of executable ----
-set(EXEC "evolution")
+set(EXEC "golf")
 
 # ---- External Directories ----
 include_directories(lib/glad/include)
@@ -19,13 +20,21 @@ add_executable(${EXEC} src/renderer.cpp src/load_assets.cpp src/init.cpp src/loa
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     # ---- Debug build ----
     message("Debug build")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0 -Wall -Wextra -g")
-    # set(CMAKE_EXE_LINKER_FLAGS " -static")
-    else()
+    if (CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0 -Wall -Wextra -g")
+        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS}")
+    elseif (CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /Od /Wall /Zi /fsanitize=address")
+        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /DEBUG")
+    endif()
+else()
     # ---- Release build ----
     message("Release build")
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Ofast")
-    # set(CMAKE_EXE_LINKER_FLAGS " -static")
+    if (CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+	    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Ofast")
+    elseif (CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /O2")
+    endif()
 endif()
 
 # ---- Specify additional flags for specific compilers or platforms ----

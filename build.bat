@@ -31,7 +31,7 @@ if "%BUILD_TYPE%" == "" (
 )
 
 REM Run CMake with the specified build type
-cmake -S . -G "MinGW Makefiles" -B build/ -DCMAKE_BUILD_TYPE=%BUILD_TYPE%
+cmake -S . -DCMAKE_CXX_COMPILER=clang++ -B build/ -DCMAKE_BUILD_TYPE=%BUILD_TYPE% 
 
 REM Build using cmake
 cmake --build build/
